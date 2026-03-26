@@ -1,8 +1,10 @@
 package logger
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,7 +24,7 @@ const (
 
 func SetupLoggerWriters() zerolog.Logger {
 	_ = os.MkdirAll("logs", os.ModePerm)
-	file, _ := os.OpenFile("logs/newgo.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, _ := os.OpenFile(filepath.Join("logs", resolveLogFileName()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 
 	console := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
@@ -70,6 +72,56 @@ func ApplyLogLevelFromEnv(logger zerolog.Logger) zerolog.Logger {
 	}
 	zerolog.SetGlobalLevel(level)
 	return logger
+}
+
+func resolveLogFileName() string {
+	if appName := strings.TrimSpace(os.Getenv("APP_NAME")); appName != "" {
+		return appName + ".log"
+	}
+
+	root, err := findProjectRoot()
+	if err == nil {
+		modFile, err := os.Open(filepath.Join(root, "go.mod"))
+		if err == nil {
+			defer modFile.Close()
+
+			scanner := bufio.NewScanner(modFile)
+			for scanner.Scan() {
+				line := strings.TrimSpace(scanner.Text())
+				if strings.HasPrefix(line, "module ") {
+					modulePath := strings.TrimSpace(strings.TrimPrefix(line, "module "))
+					modulePath = strings.Trim(modulePath, "\"")
+					if modulePath != "" {
+						return filepath.Base(modulePath) + ".log"
+					}
+				}
+			}
+		}
+		return filepath.Base(root) + ".log"
+	}
+
+	return "app.log"
+}
+
+func findProjectRoot() (string, error) {
+	current, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(current, "go.mod")); err == nil {
+			return current, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+
+	return "", os.ErrNotExist
 }
 
 /*

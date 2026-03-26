@@ -19,7 +19,7 @@ func main() {
 	defer bootstrap.Shutdown()
 
 	logger.SetModule("main")
-	logger.Info("Starting newgo API")
+	logger.Info("Starting %s API", config.Config.AppName)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

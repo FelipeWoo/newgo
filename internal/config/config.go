@@ -1,9 +1,11 @@
 package config
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"newgo/internal/logger"
 
@@ -11,6 +13,7 @@ import (
 )
 
 type AppConfig struct {
+	AppName  string
 	Env      string
 	Port     int
 	LogLevel string
@@ -42,7 +45,7 @@ func loadEnvInternal() {
 			fmt.Printf(">>>>> LoadEnv() called from: %s (file: %s, line: %d)\n", funcName, file, line)
 		}
 	*/
-	root, err := findProjectRoot("newgo")
+	root, err := findProjectRoot()
 	if err != nil {
 		logger.Fatal("Cannot locate project root: %v", err)
 	}
@@ -64,6 +67,7 @@ func loadEnvInternal() {
 
 	_ = godotenv.Load(envFile)
 
+	Config.AppName = resolveAppName(root)
 	Config.Env = env
 	Config.Port = getInt("PORT", 8080)
 	Config.LogLevel = getString("LOG_LEVEL", "info")
@@ -99,14 +103,14 @@ func getInt(key string, fallback int) int {
 	return i
 }
 
-func findProjectRoot(projectFolder string) (string, error) {
+func findProjectRoot() (string, error) {
 	current, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
 	for {
-		if filepath.Base(current) == projectFolder {
+		if _, err := os.Stat(filepath.Join(current, "go.mod")); err == nil {
 			return current, nil
 		}
 
@@ -118,4 +122,29 @@ func findProjectRoot(projectFolder string) (string, error) {
 	}
 
 	return "", os.ErrNotExist
+}
+
+func resolveAppName(root string) string {
+	if envName := getString("APP_NAME", ""); envName != "" {
+		return envName
+	}
+
+	modFile, err := os.Open(filepath.Join(root, "go.mod"))
+	if err == nil {
+		defer modFile.Close()
+
+		scanner := bufio.NewScanner(modFile)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if strings.HasPrefix(line, "module ") {
+				modulePath := strings.TrimSpace(strings.TrimPrefix(line, "module "))
+				modulePath = strings.Trim(modulePath, "\"")
+				if modulePath != "" {
+					return filepath.Base(modulePath)
+				}
+			}
+		}
+	}
+
+	return filepath.Base(root)
 }
