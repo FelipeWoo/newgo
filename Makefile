@@ -25,34 +25,42 @@ help:
 	@echo "  make reset                       - Recreate local artifacts"
 
 init:
+	clear
 	@mkdir -p $(BIN_DIR) logs
 	bash ./scripts/change_repo_name.sh
 	go mod tidy
 
 add:
+	clear
 	@test -n "$(p)" || (echo "Use: make add p=module_path" && exit 1)
 	go get $(p)
 
 run:
+	clear
 	go run $(CMD_DIR)
 
 test:
+	clear
 	ENV=test go test -v $(APP_DIR)
 
 cov:
+	clear
 	ENV=test go test -coverprofile=coverage.out $(APP_DIR)
 	go tool cover -func=coverage.out
 
 lint:
+	clear
 	go vet $(APP_DIR)
 
 format:
+	clear
 	@files=$$(find . -name "*.go" -not -path "./vendor/*"); \
 	if [ -n "$$files" ]; then gofmt -w $$files; fi
 
 check: format lint test
 
 clean:
+	clear
 	rm -rf $(BIN_DIR) logs coverage.out
 
 reset: clean init
