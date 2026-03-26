@@ -36,10 +36,10 @@ run:
 	go run $(CMD_DIR)
 
 test:
-	APP_ENV=test go test -v $(APP_DIR)
+	ENV=test go test -v $(APP_DIR)
 
 cov:
-	APP_ENV=test go test -coverprofile=coverage.out $(APP_DIR)
+	ENV=test go test -coverprofile=coverage.out $(APP_DIR)
 	go tool cover -func=coverage.out
 
 lint:

@@ -5,17 +5,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/FelipeWoo/newgo/internal/api/routes"
-	"github.com/FelipeWoo/newgo/internal/config"
+	"newgo/internal/router/routes"
 )
+
+func init() {
+	InitTestEnv("sample_test")
+}
 
 func TestSystemRoutes(t *testing.T) {
 	mux := http.NewServeMux()
-	routes.RegisterSystemRoutes(mux, config.AppConfig{
-		Name: "newgo",
-		Env:  "test",
-		Port: "8000",
-	})
+	routes.RegisterSystemRoutes(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()

@@ -1,99 +1,121 @@
 package config
 
 import (
-	"bufio"
-	"errors"
 	"os"
 	"path/filepath"
-	"strings"
+	"strconv"
+
+	"newgo/internal/logger"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
-	Name     string
 	Env      string
+	Port     int
 	LogLevel string
-	Port     string
-	Root     string
 }
 
-func Load() (AppConfig, error) {
-	_ = loadDotEnv(".env")
+var Config AppConfig
 
-	root, err := getRoot()
+var alreadyLoaded bool
+
+func LoadEnvOnce() {
+	if alreadyLoaded {
+		logger.Trace("LoadEnv skipped (already loaded)")
+		return
+	}
+	alreadyLoaded = true
+
+	loadEnvInternal()
+}
+
+func ResetEnvForTests() {
+	alreadyLoaded = false
+}
+
+func loadEnvInternal() {
+	logger.SetModule("config")
+	/*
+		if pc, file, line, ok := runtime.Caller(1); ok {
+			funcName := runtime.FuncForPC(pc).Name()
+			fmt.Printf(">>>>> LoadEnv() called from: %s (file: %s, line: %d)\n", funcName, file, line)
+		}
+	*/
+	root, err := findProjectRoot("newgo")
 	if err != nil {
-		return AppConfig{}, err
+		logger.Fatal("Cannot locate project root: %v", err)
 	}
 
-	return AppConfig{
-		Name:     getEnv("APP_NAME", "template_go"),
-		Env:      getEnv("APP_ENV", "production"),
-		LogLevel: strings.ToUpper(getEnv("LOG_LEVEL", "INFO")),
-		Port:     getEnv("APP_PORT", "8000"),
-		Root:     root,
-	}, nil
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	var envFile string
+	switch env {
+	case "test":
+		envFile = filepath.Join(root, "shared", ".env.test")
+	case "production":
+		envFile = filepath.Join(root, "shared", ".env.prod")
+	default:
+		envFile = filepath.Join(root, "shared", ".env")
+	}
+
+	_ = godotenv.Load(envFile)
+
+	Config.Env = env
+	Config.Port = getInt("PORT", 8080)
+	Config.LogLevel = getString("LOG_LEVEL", "info")
+
+	logger.Success("Config loaded for [%s] on port %d in [%s] level mode.", Config.Env, Config.Port, Config.LogLevel)
 }
 
-func loadDotEnv(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-		return err
+func getRequired(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		logger.Fatal("Required environment variable %s is missing", key)
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		key, value, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
-		}
-
-		key = strings.TrimSpace(key)
-		value = strings.TrimSpace(value)
-
-		if key == "" {
-			continue
-		}
-
-		if _, exists := os.LookupEnv(key); !exists {
-			_ = os.Setenv(key, value)
-		}
-	}
-
-	return scanner.Err()
+	return val
 }
 
-func getEnv(key, fallback string) string {
-	value := strings.TrimSpace(os.Getenv(key))
-	if value == "" {
+func getString(key string, fallback string) string {
+	val := os.Getenv(key)
+	if val == "" {
 		return fallback
 	}
-	return value
+	return val
 }
 
-func getRoot() (string, error) {
+func getInt(key string, fallback int) int {
+	val := os.Getenv(key)
+	if val == "" {
+		return fallback
+	}
+	i, err := strconv.Atoi(val)
+	if err != nil {
+		logger.Fatal("Invalid int for %s: %v", key, err)
+	}
+	return i
+}
+
+func findProjectRoot(projectFolder string) (string, error) {
 	current, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
 	for {
-		if info, err := os.Stat(filepath.Join(current, ".git")); err == nil && info.IsDir() {
+		if filepath.Base(current) == projectFolder {
 			return current, nil
 		}
 
 		parent := filepath.Dir(current)
 		if parent == current {
-			return "", errors.New(".git directory not found in any parent directory")
+			break // Ya estás en la raíz del sistema
 		}
-
 		current = parent
 	}
+
+	return "", os.ErrNotExist
 }

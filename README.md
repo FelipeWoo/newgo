@@ -9,7 +9,7 @@ It includes environment configuration, structured logging, HTTP endpoints, testi
 
 - Structured code with `cmd/` and `internal/`
 - Environment loading from `.env`
-- Structured logging with `log/slog`
+- Structured logging with `zerolog`
 - Minimal HTTP API using the Go standard library
 - Test suite with `go test`
 - Formatting and static checks with `gofmt` and `go vet`
@@ -40,13 +40,12 @@ The server starts on `http://localhost:8000`.
 
 ## Environment Configuration
 
-Create a `.env` file based on the provided `.env.example` and customize values as needed.
+Create a `.env` file and customize values as needed.
 
 ```dotenv
-APP_NAME=template_go
-APP_ENV=development
+ENV=development
 LOG_LEVEL=DEBUG
-APP_PORT=8000
+PORT=8000
 ```
 
 ## Testing

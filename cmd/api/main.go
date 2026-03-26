@@ -1,26 +1,48 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/FelipeWoo/newgo/internal/api"
-	"github.com/FelipeWoo/newgo/internal/bootstrap"
+	"newgo/internal/bootstrap"
+	"newgo/internal/config"
+	"newgo/internal/logger"
+	"newgo/internal/router"
 )
 
 func main() {
-	app, err := bootstrap.Boot("main")
-	if err != nil {
-		log.Fatalf("bootstrap failed: %v", err)
+
+	bootstrap.InitAll()
+	defer bootstrap.Shutdown()
+
+	logger.SetModule("main")
+	logger.Info("Starting newgo API")
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	logger.SetModule("main")
+	logger.Info("Ready to process requests ...")
+	server := router.NewServer(config.Config)
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fail("server error: %v", err)
+		}
+	}()
+
+	// Esperar señal de cierre (Ctrl+C, kill, etc.)
+	<-ctx.Done()
+	logger.Warn("Shutdown signal received")
+
+	// Cerrar servidor web limpio
+	if err := server.Shutdown(context.Background()); err != nil {
+		logger.Fail("server shutdown error: %v", err)
+	} else {
+		logger.Info("API server shut down gracefully")
 	}
 
-	server := api.NewServer(app.Config)
-
-	app.Logger.Info("application ready", "name", app.Config.Name, "port", app.Config.Port)
-	fmt.Printf("Application: %s\n", app.Config.Name)
-
-	if err := server.ListenAndServe(); err != nil {
-		app.Logger.Error("server stopped", "error", err)
-		log.Fatal(err)
-	}
 }
