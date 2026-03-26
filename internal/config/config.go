@@ -39,12 +39,7 @@ func ResetEnvForTests() {
 
 func loadEnvInternal() {
 	logger.SetModule("config")
-	/*
-		if pc, file, line, ok := runtime.Caller(1); ok {
-			funcName := runtime.FuncForPC(pc).Name()
-			fmt.Printf(">>>>> LoadEnv() called from: %s (file: %s, line: %d)\n", funcName, file, line)
-		}
-	*/
+
 	root, err := findProjectRoot()
 	if err != nil {
 		logger.Fatal("Cannot locate project root: %v", err)
