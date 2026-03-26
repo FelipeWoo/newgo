@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-SCRIPT_URL="https://raw.githubusercontent.com/FelipeWoo/newgo/refs/heads/master/scripts/make_repo.sh"
-SCRIPT_PATH="$HOME/make_repo_go.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/FelipeWoo/newgo/refs/heads/master/scripts/make_repo_newgo.sh"
+SCRIPT_PATH="$HOME/make_repo_newgo.sh"
 ALIASES_FILE="$HOME/.bash_aliases"
 
 curl -fsSL "$SCRIPT_URL" -o "$SCRIPT_PATH"
