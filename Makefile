@@ -26,6 +26,7 @@ help:
 
 init:
 	@mkdir -p $(BIN_DIR) logs
+	bash ./scripts/change_repo_name.sh
 	go mod tidy
 
 add:
