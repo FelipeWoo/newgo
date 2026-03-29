@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"newgo/internal/bootstrap"
 	"newgo/internal/config"
 	"newgo/internal/logger"
 	"newgo/internal/router"
+	//"newgo/cmd/router"
 )
 
 func main() {
@@ -19,14 +19,24 @@ func main() {
 	defer bootstrap.Shutdown()
 
 	logger.SetModule("main")
-	logger.Info("Starting %s API", config.Config.AppName)
+	logger.Info("Starting %s app", config.Config.AppName)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
 
 	logger.SetModule("main")
 	logger.Info("Ready to process requests ...")
 	server := router.NewServer(config.Config)
+
+	go func() {
+		<-sigChan
+		logger.Warn("Canceled by Ctrl+C")
+		cancel()
+	}()
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -34,11 +44,18 @@ func main() {
 		}
 	}()
 
-	// Esperar señal de cierre (Ctrl+C, kill, etc.)
+	// err := cli.Menu(ctx)
+	// if err != nil {
+	// 	logger.Fail("app error: %v", err)
+	// }
+
+	// logger.Info("Shutting down...")
+
+	// Wait for shutdown signal (Ctrl+C, kill, etc.)
 	<-ctx.Done()
 	logger.Warn("Shutdown signal received")
 
-	// Cerrar servidor web limpio
+	// Close the server gracefully
 	if err := server.Shutdown(context.Background()); err != nil {
 		logger.Fail("server shutdown error: %v", err)
 	} else {

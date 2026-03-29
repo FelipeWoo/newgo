@@ -18,11 +18,12 @@ fi
 
 app_name="$(
   awk -F= '
-    $1 == "APP_NAME" {
+    /^[[:space:]]*(export[[:space:]]+)?APP_NAME[[:space:]]*=/ {
       value = substr($0, index($0, "=") + 1)
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
       gsub(/^"/, "", value)
       gsub(/"$/, "", value)
+      sub(/[[:space:]]+#.*$/, "", value)
       print value
       exit
     }
@@ -57,7 +58,11 @@ echo "Renaming Go module: ${current_module} -> ${app_name}"
 go -C "${ROOT_DIR}" mod edit -module "${app_name}"
 
 while IFS= read -r file; do
-  perl -0pi -e "s#${current_module}/#${app_name}/#g" "${file}"
+  CURRENT_MODULE="${current_module}" APP_NAME="${app_name}" perl -0pi -e '
+    my $current = quotemeta($ENV{CURRENT_MODULE});
+    my $app = $ENV{APP_NAME};
+    s/$current\//$app\//g;
+  ' "${file}"
 done < <(find "${ROOT_DIR}" -type f -name '*.go' -not -path '*/vendor/*' | sort)
 
 echo "Updated imports to ${app_name}"
