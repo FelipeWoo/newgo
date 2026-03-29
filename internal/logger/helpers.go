@@ -2,8 +2,6 @@ package logger
 
 import (
 	"fmt"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -74,17 +72,8 @@ const colorOrange = "\033[38;5;208m" // ANSI extended color for naranja
 
 // Imprime un encabezado con color naranja
 func LogTestHeader(t *testing.T) {
+	t.Helper()
 
-	var name string
-	pc, _, _, ok := runtime.Caller(1) // 1 = función que llamó a esta
-	if !ok {
-		name = "unknown"
-	}
-	fullName := runtime.FuncForPC(pc).Name()
-	parts := strings.Split(fullName, ".")
-	name = parts[len(parts)-1]
-
-	line := strings.Repeat("*", 120)
-	header := fmt.Sprintf("\n%s%s\n🟧 %s\n%s%s", colorOrange, line, name, line, colorReset)
+	header := fmt.Sprintf("%s[TEST] %s%s", colorOrange, t.Name(), colorReset)
 	t.Log(header)
 }

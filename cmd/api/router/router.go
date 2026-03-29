@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"newgo/cmd/api/router/routes"
 	"newgo/internal/config"
-	"newgo/internal/router/routes"
 )
 
 func NewServer(cfg config.AppConfig) *http.Server {

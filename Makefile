@@ -1,6 +1,6 @@
 ENV_FILE := .env
 APP_DIR := ./...
-CMD_DIR := ./cmd/api
+CMD_DIR := ./cmd
 BIN_DIR := bin
 
 ifneq ("$(wildcard $(ENV_FILE))","")

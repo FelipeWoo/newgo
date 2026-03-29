@@ -5,7 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"newgo/internal/router/routes"
+	"newgo/cmd/api/router/routes"
+	"newgo/internal/logger"
 )
 
 func init() {
@@ -13,6 +14,8 @@ func init() {
 }
 
 func TestSystemRoutes(t *testing.T) {
+	logger.LogTestHeader(t)
+
 	mux := http.NewServeMux()
 	routes.RegisterSystemRoutes(mux)
 
@@ -26,6 +29,8 @@ func TestSystemRoutes(t *testing.T) {
 }
 
 func TestSumOnePlusOne(t *testing.T) {
+	logger.LogTestHeader(t)
+
 	if 1+1 != 2 {
 		t.Fatal("expected 1 + 1 to equal 2")
 	}
