@@ -60,7 +60,7 @@ func SetupLoggerWriters() zerolog.Logger {
 
 	multi := zerolog.MultiLevelWriter(console, fileWriter)
 
-	// Configura base sin log level aún
+	// Build the base logger first; the env-driven log level is applied later.
 	zerolog.TimeFieldFormat = time.RFC3339
 	return zerolog.New(multi).With().Timestamp().Logger()
 }

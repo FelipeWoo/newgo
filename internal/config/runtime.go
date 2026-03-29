@@ -12,6 +12,7 @@ func Init() AppConfig {
 
 	LoadEnvOnce()
 
+	// Re-apply the logger after loading env so LOG_LEVEL takes effect.
 	log.Logger = logger.ApplyLogLevelFromEnv(baseLogger)
 	logger.Success("All services initialized")
 
@@ -19,7 +20,7 @@ func Init() AppConfig {
 }
 
 func Shutdown() {
-	// ...
+	// Reserved for coordinated shutdown hooks as more services are added.
 }
 
 func SetModule(name string) {

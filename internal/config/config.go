@@ -111,7 +111,7 @@ func findProjectRoot() (string, error) {
 
 		parent := filepath.Dir(current)
 		if parent == current {
-			break // Ya estás en la raíz del sistema
+			break // Reached the filesystem root.
 		}
 		current = parent
 	}

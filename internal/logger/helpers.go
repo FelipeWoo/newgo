@@ -68,9 +68,9 @@ func logWithError(symbol string, event *zerolog.Event, format string, args ...in
 	entry.Msg(symbol + " " + msg)
 }
 
-const colorOrange = "\033[38;5;208m" // ANSI extended color for naranja
+const colorOrange = "\033[38;5;208m" // ANSI extended color for orange
 
-// Imprime un encabezado con color naranja
+// LogTestHeader prints a visible header for the current test.
 func LogTestHeader(t *testing.T) {
 	t.Helper()
 
